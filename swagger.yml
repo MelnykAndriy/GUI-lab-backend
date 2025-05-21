@@ -1,0 +1,600 @@
+openapi: 3.0.3
+info:
+  title: Msgtrik Chat Application API
+  description: |
+    This is the API documentation for the Msgtrik Chat Application.
+    It covers all endpoints needed for authentication, user management, and messaging.
+  version: 1.0.0
+  contact:
+    email: support@msgtrik.example.com
+
+servers:
+  - url: https://api.msgtrik.example.com/v1
+    description: Production server
+  - url: https://staging-api.msgtrik.example.com/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication operations
+  - name: Users
+    description: User management operations
+  - name: Messages
+    description: Message operations
+  - name: Chats
+    description: Chat operations
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        gender:
+          type: string
+          enum: [male, female, other]
+          example: "male"
+        dob:
+          type: string
+          format: date
+          example: "1990-01-01"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        avatarUrl:
+          type: string
+          format: uri
+          example: "https://example.com/avatar.jpg"
+        avatarColor:
+          type: string
+          example: "#3498db"
+    
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        password:
+          type: string
+          format: password
+          example: "password123"
+    
+    UserRegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - gender
+        - dob
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        password:
+          type: string
+          format: password
+          example: "password123"
+        gender:
+          type: string
+          enum: [male, female, other]
+          example: "male"
+        dob:
+          type: string
+          format: date
+          example: "1990-01-01"
+    
+    AuthResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          $ref: '#/components/schemas/User'
+    
+    Message:
+      type: object
+      required:
+        - id
+        - senderId
+        - receiverId
+        - content
+        - timestamp
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        senderId:
+          type: integer
+          format: int64
+          example: 10
+        receiverId:
+          type: integer
+          format: int64
+          example: 20
+        content:
+          type: string
+          example: "Hello, how are you?"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+    
+    NewMessageRequest:
+      type: object
+      required:
+        - receiverId
+        - content
+      properties:
+        receiverId:
+          type: integer
+          format: int64
+          example: 20
+        content:
+          type: string
+          example: "Hello, how are you?"
+    
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        gender:
+          type: string
+          enum: [male, female, other]
+          example: "male"
+        dob:
+          type: string
+          format: date
+          example: "1990-01-01"
+        avatarUrl:
+          type: string
+          format: uri
+          example: "https://example.com/avatar.jpg"
+        avatarColor:
+          type: string
+          example: "#3498db"
+    
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 400
+        message:
+          type: string
+          example: "Bad request"
+        details:
+          type: string
+          example: "Email already exists"
+
+paths:
+  /api/users/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to the application
+      description: Login with email and password to get authentication token
+      operationId: login
+      requestBody:
+        description: Login credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account
+      operationId: register
+      requestBody:
+        description: User registration details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/token/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Obtain a new access token using a valid refresh token.
+      operationId: refreshToken
+      requestBody:
+        description: Refresh token
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh:
+                  type: string
+                  description: The refresh token issued during login
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                    description: The new access token
+                    example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/search/{email}:
+    get:
+      tags:
+        - Users
+      summary: Get user by email
+      description: Get a specific user by their email
+      operationId: getUserByEmail
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: email
+          in: path
+          description: Email of the user to get
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user
+      description: Get the currently authenticated user
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - Users
+      summary: Update current user
+      description: Update the currently authenticated user's profile
+      operationId: updateCurrentUser
+      security:
+        - BearerAuth: []
+      requestBody:
+        description: User profile update details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/me/avatar:
+    post:
+      tags:
+        - Users
+      summary: Upload avatar
+      description: Upload a new avatar image for the current user
+      operationId: uploadAvatar
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avatarUrl:
+                    type: string
+                    format: uri
+                    example: "https://example.com/avatar.jpg"
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chats/messages:
+    post:
+      tags:
+        - Chats
+      summary: Send message
+      description: Send a new message to a user
+      operationId: sendMessage
+      security:
+        - BearerAuth: []
+      requestBody:
+        description: Message details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMessageRequest'
+        required: true
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Receiver not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chats/messages/{userId}:
+    get:
+      tags:
+        - Chats
+      summary: Get chat messages
+      description: Get all messages between the current user and another user
+      operationId: getChatMessages
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          description: ID of the other user in the chat
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 100
+                      pages:
+                        type: integer
+                        example: 2
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 50
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chats:
+    get:
+      tags:
+        - Chats
+      summary: Get recent chats
+      description: Get all recent chats for the current user
+      operationId: getRecentChats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user:
+                          $ref: '#/components/schemas/User'
+                        lastMessage:
+                          $ref: '#/components/schemas/Message'
+                        unreadCount:
+                          type: integer
+                          example: 5
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

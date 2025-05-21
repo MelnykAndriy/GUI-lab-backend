@@ -1,0 +1,102 @@
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from chats.models import Message
+from chats.serializers import (MessageSerializer, NewMessageRequestSerializer,
+                               RecentChatSerializer)
+
+
+class SendMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = NewMessageRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            receiver_id = serializer.validated_data["receiverId"]
+            content = serializer.validated_data["content"]
+            try:
+                receiver = User.objects.get(id=receiver_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"code": 404, "message": "Receiver not found"}, status=404
+                )
+            message = Message.objects.create(
+                sender=request.user, receiver=receiver, content=content
+            )
+            return Response(MessageSerializer(message).data, status=201)
+        return Response(
+            {"code": 400, "message": "Invalid input", "details": serializer.errors},
+            status=400,
+        )
+
+
+class ChatMessagesPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "limit"
+    max_page_size = 100
+
+
+class ChatMessagesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, userId):
+        try:
+            other_user = User.objects.get(id=userId)
+        except User.DoesNotExist:
+            return Response({"code": 404, "message": "User not found"}, status=404)
+        messages = Message.objects.filter(
+            (
+                models.Q(sender=request.user, receiver=other_user)
+                | models.Q(sender=other_user, receiver=request.user)
+            )
+        ).order_by("timestamp")
+        paginator = ChatMessagesPagination()
+        page = paginator.paginate_queryset(messages, request)
+        data = MessageSerializer(page, many=True).data
+        return paginator.get_paginated_response({"messages": data})
+
+
+class RecentChatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        sent = Message.objects.filter(sender=user).values_list("receiver", flat=True)
+        received = Message.objects.filter(receiver=user).values_list(
+            "sender", flat=True
+        )
+        chat_user_ids = set(list(sent) + list(received))
+        chat_user_ids.discard(user.id)
+        chats = []
+        for other_id in chat_user_ids:
+            try:
+                other_user = User.objects.get(id=other_id)
+            except User.DoesNotExist:
+                continue
+            last_msg = (
+                Message.objects.filter(
+                    (
+                        Q(sender=user, receiver=other_user)
+                        | Q(sender=other_user, receiver=user)
+                    )
+                )
+                .order_by("-timestamp")
+                .first()
+            )
+            unread_count = Message.objects.filter(
+                sender=other_user, receiver=user
+            ).count()  # Placeholder
+            chats.append(
+                {
+                    "user": other_user,
+                    "lastMessage": last_msg,
+                    "unreadCount": unread_count,
+                }
+            )
+        serializer = RecentChatSerializer(chats, many=True)
+        return Response({"chats": serializer.data})
