@@ -10,12 +10,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import UserProfile
+from rest_framework_simplejwt.tokens import AccessToken
 from .serializers import (EmailTokenObtainPairSerializer,
                           UserRegisterRequestSerializer, UserSerializer)
-
-# Message and chat views have been moved to messages/views.py and chats/views.py
-# Only user-related views should remain here.
-# This file can be deleted after confirming all logic is migrated.
 
 
 class CurrentUserView(APIView):
@@ -93,15 +90,19 @@ class RegisterView(APIView):
         )
         user.set_password(data["password"])
         user.save()
-        profile = UserProfile.objects.create(
+        UserProfile.objects.create(
             user=user,
             name=data["name"],
             gender=data["gender"],
             dob=data["dob"],
         )
+        access_token = AccessToken.for_user(user)
         refresh = RefreshToken.for_user(user)
         return Response(
-            {"token": str(refresh.access_token), "user": UserSerializer(user).data},
+            {
+                "access": str(access_token), 
+                "refresh": str(refresh)
+            },
             status=201,
         )
 
