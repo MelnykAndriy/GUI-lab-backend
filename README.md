@@ -138,4 +138,21 @@ You can use [httpie](https://httpie.io/), [curl](https://curl.se/), [Postman](ht
 
 Swagger/OpenAPI specification file [`swagger.yml`](./swagger.yml). You can use tools like [Swagger UI](https://swagger.io/tools/swagger-ui/) or [Redoc](https://github.com/Redocly/redoc) to visualize and interact with the API documentation.
 
+## Creating Test Users (for Bot Auto-Reply)
+
+To automatically create the bot users for testing, run:
+
+```sh
+python manage.py create_bot_users
+```
+
+This will create the following users (if they do not already exist):
+- alice@example.com
+- bob@example.com
+- charlie@example.com
+- dave@example.com
+- eve@example.com
+
+You can use any password you like by editing the script, but the default is `testpass` for all users.
+
 

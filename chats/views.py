@@ -1,10 +1,13 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import threading
+import time
 
 from chats.models import Message
 from chats.serializers import (
@@ -12,7 +15,22 @@ from chats.serializers import (
     NewMessageRequestSerializer,
     RecentChatSerializer,
 )
+from users.management.commands.create_bot_users import BOT_USER_INFOS, BOT_EMAILS
 
+def _handle_bot_replies(request, receiver, content):
+    # Auto-reply bot logic (testing only)
+    if receiver.email in BOT_EMAILS:
+
+        def bot_reply():
+            time.sleep(0.5)  # Simulate thinking delay
+            reply_content = f"Auto-reply from {receiver.first_name or receiver.username}: I received your message: '{content}'"
+            Message.objects.create(
+                sender=receiver, 
+                receiver=request.user,
+                content=reply_content
+            )
+
+        threading.Thread(target=bot_reply, daemon=True).start()
 
 class SendMessageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -31,6 +49,9 @@ class SendMessageView(APIView):
             message = Message.objects.create(
                 sender=request.user, receiver=receiver, content=content
             )
+
+            _handle_bot_replies(request, receiver, content)
+
             return Response(MessageSerializer(message).data, status=201)
         return Response(
             {"code": 400, "message": "Invalid input", "details": serializer.errors},
