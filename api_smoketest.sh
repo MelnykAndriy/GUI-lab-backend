@@ -62,12 +62,24 @@ new_access=$(echo "$refresh_body" | python3 -c "import sys, json; print(json.loa
 print_result $([[ $refresh_code == 200 ]] && echo 0 || echo 1) "Token refresh ($refresh_code)"
 
 # 4. Get current user info
+# Updated: Expect nested profile object in response
+
 echo "${yellow}Getting current user info...${reset}"
 me_response=$(curl -s -w "${delimiter}%{http_code}" -X GET http://localhost:8000/api/users/me/ \
   -H "Authorization: Bearer $new_access")
 me_body="${me_response%%${delimiter}*}"
 me_code="${me_response##*${delimiter}}"
 print_result $([[ $me_code == 200 ]] && echo 0 || echo 1) "Get current user ($me_code)"
+
+# 4b. Update current user profile (name, gender, dob)
+echo "${yellow}Updating current user profile...${reset}"
+update_response=$(curl -s -w "${delimiter}%{http_code}" -X PUT http://localhost:8000/api/users/me/ \
+  -H "Authorization: Bearer $new_access" \
+  -H "Content-Type: application/json" \
+  -d '{"profile": {"name": "John Updated", "gender": "other", "dob": "1991-02-02"}}')
+update_body="${update_response%%${delimiter}*}"
+update_code="${update_response##*${delimiter}}"
+print_result $([[ $update_code == 200 ]] && echo 0 || echo 1) "Update current user profile ($update_code)"
 
 # 5. Send a message (to self for test)
 echo "${yellow}Sending a message...${reset}"

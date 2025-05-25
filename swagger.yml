@@ -34,25 +34,12 @@ components:
       bearerFormat: JWT
   
   schemas:
-    User:
+    UserProfile:
       type: object
-      required:
-        - id
-        - name
-        - email
-        - createdAt
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
         name:
           type: string
           example: "John Doe"
-        email:
-          type: string
-          format: email
-          example: "john.doe@example.com"
         gender:
           type: string
           enum: [male, female, other]
@@ -72,7 +59,25 @@ components:
         avatarColor:
           type: string
           example: "#3498db"
-    
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - profile
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+
     UserLoginRequest:
       type: object
       required:
@@ -176,24 +181,8 @@ components:
     UserUpdateRequest:
       type: object
       properties:
-        name:
-          type: string
-          example: "John Doe"
-        gender:
-          type: string
-          enum: [male, female, other]
-          example: "male"
-        dob:
-          type: string
-          format: date
-          example: "1990-01-01"
-        avatarUrl:
-          type: string
-          format: uri
-          example: "https://example.com/avatar.jpg"
-        avatarColor:
-          type: string
-          example: "#3498db"
+        profile:
+          $ref: '#/components/schemas/UserProfile'
     
     ErrorResponse:
       type: object

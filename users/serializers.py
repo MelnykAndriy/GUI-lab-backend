@@ -17,27 +17,31 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer()
     id = serializers.IntegerField(source="pk", read_only=True)
-    name = serializers.CharField(source="profile.name", read_only=True)
-    gender = serializers.CharField(source="profile.gender", read_only=True)
-    dob = serializers.DateField(source="profile.dob", read_only=True)
-    createdAt = serializers.DateTimeField(source="profile.createdAt", read_only=True)
-    avatarUrl = serializers.CharField(source="profile.avatarUrl", read_only=True)
-    avatarColor = serializers.CharField(source="profile.avatarColor", read_only=True)
+    email = serializers.EmailField()
 
     class Meta:
         model = User
         fields = [
             "id",
-            "name",
             "email",
-            "gender",
-            "dob",
-            "createdAt",
-            "avatarUrl",
-            "avatarColor",
+            "profile",
         ]
-        read_only_fields = ["id", "createdAt"]
+        read_only_fields = ["id"]
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        # Update User fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        # Update UserProfile fields
+        profile = instance.profile
+        for attr, value in profile_data.items():
+            setattr(profile, attr, value)
+        profile.save()
+        return instance
 
 
 class UserRegisterRequestSerializer(serializers.Serializer):

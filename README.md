@@ -29,17 +29,7 @@
 ## Local testing scenarios
 
 ### 1. Register a new user
-Send a POST request to `/api/users/register/` with JSON body:
-```json
-{
-  "name": "John Doe",
-  "email": "john.doe@example.com",
-  "password": "password123",
-  "gender": "male",
-  "dob": "1990-01-01"
-}
-```
-
+Send a POST request to `/api/users/register/`:
 ```sh
 curl -X POST http://localhost:8000/api/users/register/ \
   -H "Content-Type: application/json" \
@@ -49,42 +39,28 @@ curl -X POST http://localhost:8000/api/users/register/ \
     "password": "password123",
     "gender": "male",
     "dob": "1990-01-01"
-  }'
+  }' | jq
 ```
 
 ### 2. Login and obtain JWT tokens
-Send a POST request to `/api/users/login/` with JSON body:
-```json
-{
-  "email": "john.doe@example.com",
-  "password": "password123"
-}
-```
-Response will include `access` and `refresh` tokens.
-
+Send a POST request to `/api/users/login/`:
 ```sh
 curl -X POST http://localhost:8000/api/users/login/ \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john.doe@example.com",
     "password": "password123"
-  }'
+  }' | jq
 ```
 
 ### 3. Refresh your access token
-Send a POST request to `/api/users/token/refresh/` with JSON body:
-```json
-{
-  "refresh": "<your_refresh_token>"
-}
-```
-
+Send a POST request to `/api/users/token/refresh/`:
 ```sh
 curl -X POST http://localhost:8000/api/users/token/refresh/ \
   -H "Content-Type: application/json" \
   -d '{
     "refresh": "<your_refresh_token>"
-  }'
+  }' | jq
 ```
 
 ### 4. Access protected endpoints
@@ -93,25 +69,28 @@ Include the access token in the `Authorization` header:
 Authorization: Bearer <your_access_token>
 ```
 
-Example: Get current user info
-```
-GET /api/users/me/
-```
-
+#### Get current user info (returns nested profile)
 ```sh
 curl -X GET http://localhost:8000/api/users/me/ \
-  -H "Authorization: Bearer <your_access_token>"
+  -H "Authorization: Bearer <your_access_token>" | jq
+```
+
+#### Update current user profile
+```sh
+curl -X PUT http://localhost:8000/api/users/me/ \
+  -H "Authorization: Bearer <your_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "profile": {
+      "name": "John Updated",
+      "gender": "other",
+      "dob": "1991-02-02"
+    }
+  }' | jq
 ```
 
 ### 5. Send a message
-POST to `/api/chats/messages/` with JSON body:
-```json
-{
-  "receiverId": 2,
-  "content": "Hello!"
-}
-```
-
+POST to `/api/chats/messages/`:
 ```sh
 curl -X POST http://localhost:8000/api/chats/messages/ \
   -H "Authorization: Bearer <your_access_token>" \
@@ -119,40 +98,36 @@ curl -X POST http://localhost:8000/api/chats/messages/ \
   -d '{
     "receiverId": 2,
     "content": "Hello!"
-  }'
+  }' | jq
 ```
 
 ### 6. Get chat messages
-GET `/api/chats/messages/<userId>/`
-
+GET `/api/chats/messages/<userId>/`:
 ```sh
 curl -X GET http://localhost:8000/api/chats/messages/<userId>/ \
-  -H "Authorization: Bearer <your_access_token>"
+  -H "Authorization: Bearer <your_access_token>" | jq
 ```
 
 ### 7. Get recent chats
-GET `/api/chats/`
-
+GET `/api/chats/`:
 ```sh
 curl -X GET http://localhost:8000/api/chats/ \
-  -H "Authorization: Bearer <your_access_token>"
+  -H "Authorization: Bearer <your_access_token>" | jq
 ```
 
 ### 8. Upload avatar
-POST to `/api/users/me/avatar` with `multipart/form-data` containing an `avatar` file field.
-
+POST to `/api/users/me/avatar` with `multipart/form-data` containing an `avatar` file field:
 ```sh
 curl -X POST http://localhost:8000/api/users/me/avatar \
   -H "Authorization: Bearer <your_access_token>" \
-  -F "avatar=@/path/to/avatar.jpg"
+  -F "avatar=@/path/to/avatar.jpg" | jq
 ```
 
 ### 9. Get user by email
-GET `/api/users/search/<email>/`
-
+GET `/api/users/search/<email>/`:
 ```sh
 curl -X GET http://localhost:8000/api/users/search/<email>/ \
-  -H "Authorization: Bearer <your_access_token>"
+  -H "Authorization: Bearer <your_access_token>" | jq
 ```
 
 ---
@@ -161,6 +136,6 @@ You can use [httpie](https://httpie.io/), [curl](https://curl.se/), [Postman](ht
 
 ## API Endpoints
 
-Swagger/OpenAPI specification file [`swagger.json`](./swagger.json). You can use tools like [Swagger UI](https://swagger.io/tools/swagger-ui/) or [Redoc](https://github.com/Redocly/redoc) to visualize and interact with the API documentation.
+Swagger/OpenAPI specification file [`swagger.yml`](./swagger.yml). You can use tools like [Swagger UI](https://swagger.io/tools/swagger-ui/) or [Redoc](https://github.com/Redocly/redoc) to visualize and interact with the API documentation.
 
 
