@@ -98,5 +98,5 @@ class RecentChatsView(APIView):
                     "unreadCount": unread_count,
                 }
             )
-        serializer = RecentChatSerializer(chats, many=True)
+        serializer = RecentChatSerializer(chats, many=True, context={"request": request} ) 
         return Response({"chats": serializer.data})

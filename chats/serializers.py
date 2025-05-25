@@ -20,6 +20,11 @@ class NewMessageRequestSerializer(serializers.Serializer):
 
 
 class RecentChatSerializer(serializers.Serializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    user = serializers.SerializerMethodField()
     lastMessage = MessageSerializer()
     unreadCount = serializers.IntegerField()
+
+    def get_user(self, obj):
+        from users.serializers import UserSerializer
+        request = self.context.get('request')
+        return UserSerializer(obj['user'], context={'request': request}).data
