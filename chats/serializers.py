@@ -7,11 +7,12 @@ from chats.models import Message
 class MessageSerializer(serializers.ModelSerializer):
     senderId = serializers.IntegerField(source="sender.id", read_only=True)
     receiverId = serializers.IntegerField(source="receiver.id")
+    read = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Message
-        fields = ["id", "senderId", "receiverId", "content", "timestamp"]
-        read_only_fields = ["id", "senderId", "timestamp"]
+        fields = ["id", "senderId", "receiverId", "content", "timestamp", "read"]
+        read_only_fields = ["id", "senderId", "timestamp", "read"]
 
 
 class NewMessageRequestSerializer(serializers.Serializer):

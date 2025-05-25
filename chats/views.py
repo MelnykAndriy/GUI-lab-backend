@@ -142,4 +142,25 @@ class RecentChatsView(APIView):
         serializer = RecentChatSerializer(
             chats, many=True, context={"request": request}
         )
+        # Add 'read' status to lastMessage if present
+        for chat, data in zip(chats, serializer.data):
+            if chat["lastMessage"]:
+                data["lastMessage"]["read"] = chat["lastMessage"].read
         return Response({"chats": serializer.data})
+
+
+class MarkMessagesAsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, userId):
+        try:
+            other_user = User.objects.get(id=userId)
+        except User.DoesNotExist:
+            return Response({"code": 404, "message": "User not found"}, status=404)
+        # Mark all messages from other_user to current user as read
+        updated = Message.objects.filter(sender=other_user, receiver=request.user, read=False).update(read=True)
+        return Response({
+            "success": True,
+            "message": f"Messages marked as read",
+            "updated": updated
+        })
