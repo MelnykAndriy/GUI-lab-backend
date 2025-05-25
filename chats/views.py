@@ -7,8 +7,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from chats.models import Message
-from chats.serializers import (MessageSerializer, NewMessageRequestSerializer,
-                               RecentChatSerializer)
+from chats.serializers import (
+    MessageSerializer,
+    NewMessageRequestSerializer,
+    RecentChatSerializer,
+)
 
 
 class SendMessageView(APIView):
@@ -58,7 +61,20 @@ class ChatMessagesView(APIView):
         paginator = ChatMessagesPagination()
         page = paginator.paginate_queryset(messages, request)
         data = MessageSerializer(page, many=True).data
-        return paginator.get_paginated_response({"messages": data})
+
+        pagination_provider = hasattr(paginator, "page") and paginator.page is not None
+        pagination = {
+            "total": (
+                paginator.page.paginator.count if pagination_provider else len(data)
+            ),
+            "pages": paginator.page.paginator.num_pages if pagination_provider else 1,
+            "page": paginator.page.number if pagination_provider else 1,
+            "limit": (
+                paginator.get_page_size(request) if pagination_provider else len(data)
+            ),
+        }
+
+        return Response({"messages": data, "pagination": pagination})
 
 
 class RecentChatsView(APIView):
@@ -98,5 +114,7 @@ class RecentChatsView(APIView):
                     "unreadCount": unread_count,
                 }
             )
-        serializer = RecentChatSerializer(chats, many=True, context={"request": request} ) 
+        serializer = RecentChatSerializer(
+            chats, many=True, context={"request": request}
+        )
         return Response({"chats": serializer.data})
