@@ -10,10 +10,20 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    avatarUrl = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
         fields = ["name", "gender", "dob", "createdAt", "avatarUrl", "avatarColor"]
         read_only_fields = ["createdAt"]
+
+    def get_avatarUrl(self, obj):
+        request = self.context.get('request')
+        if obj.avatarUrl and request:
+            if obj.avatarUrl.startswith('http://') or obj.avatarUrl.startswith('https://'):
+                return obj.avatarUrl
+            return request.build_absolute_uri(obj.avatarUrl)
+        return obj.avatarUrl
 
 
 class UserSerializer(serializers.ModelSerializer):

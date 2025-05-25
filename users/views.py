@@ -19,11 +19,11 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={"request": request})
         return Response(serializer.data)
 
     def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer = UserSerializer(request.user, data=request.data, partial=True, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -49,12 +49,13 @@ class AvatarUploadView(APIView):
         with open(filepath, "wb+") as dest:
             for chunk in avatar.chunks():
                 dest.write(chunk)
-        avatar_url = f"{settings.MEDIA_URL}avatars/{filename}"
-        request.user.profile.avatarUrl = (
-            avatar_url if hasattr(request.user, "profile") else avatar_url
-        )
-        request.user.save()
-        return Response({"avatarUrl": avatar_url})
+        relative_url = f"{settings.MEDIA_URL}avatars/{filename}"
+        absolute_url = request.build_absolute_uri(relative_url)
+        # Update the user's profile model with the new avatar URL
+        profile = request.user.profile
+        profile.avatarUrl = absolute_url
+        profile.save()
+        return Response({"avatarUrl": absolute_url})
 
 
 class UserByEmailView(APIView):
