@@ -1,3 +1,6 @@
+import threading
+import time
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
@@ -6,16 +9,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import threading
-import time
 
 from chats.models import Message
-from chats.serializers import (
-    MessageSerializer,
-    NewMessageRequestSerializer,
-    RecentChatSerializer,
-)
-from users.management.commands.create_bot_users import BOT_USER_INFOS, BOT_EMAILS
+from chats.serializers import (MessageSerializer, NewMessageRequestSerializer,
+                               RecentChatSerializer)
+from users.management.commands.create_bot_users import BOT_EMAILS
+
 
 def _handle_bot_replies(request, receiver, content):
     # Auto-reply bot logic (testing only)
@@ -78,7 +77,7 @@ class ChatMessagesView(APIView):
                 models.Q(sender=request.user, receiver=other_user)
                 | models.Q(sender=other_user, receiver=request.user)
             )
-        ).order_by("timestamp")
+        ).order_by("-timestamp")  # Newest messages first
         paginator = ChatMessagesPagination()
         page = paginator.paginate_queryset(messages, request)
         data = MessageSerializer(page, many=True).data
@@ -135,6 +134,11 @@ class RecentChatsView(APIView):
                     "unreadCount": unread_count,
                 }
             )
+        # After building the chats list, sort by lastMessage.timestamp (descending)
+        chats.sort(
+            key=lambda c: c["lastMessage"].timestamp if c["lastMessage"] else "",
+            reverse=True,
+        )
         serializer = RecentChatSerializer(
             chats, many=True, context={"request": request}
         )

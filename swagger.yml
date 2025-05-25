@@ -163,6 +163,10 @@ components:
           type: string
           format: date-time
           example: "2023-01-01T12:00:00Z"
+        read:
+          type: boolean
+          description: Indicates if the message has been read by the receiver
+          example: false
     
     NewMessageRequest:
       type: object
@@ -584,6 +588,50 @@ paths:
                           example: 5
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/chats/messages/{userId}/read:
+    post:
+      tags:
+        - Chats
+      summary: Mark messages as read
+      description: Mark all messages from a specific user as read
+      operationId: markMessagesAsRead
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          description: ID of the user whose messages to mark as read
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Messages marked as read successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Messages marked as read"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
           content:
             application/json:
               schema:
