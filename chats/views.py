@@ -125,8 +125,8 @@ class RecentChatsView(APIView):
                 .first()
             )
             unread_count = Message.objects.filter(
-                sender=other_user, receiver=user
-            ).count()  # Placeholder
+                sender=other_user, receiver=user, read=False
+            ).count()  # Only count unread messages
             chats.append(
                 {
                     "user": other_user,
